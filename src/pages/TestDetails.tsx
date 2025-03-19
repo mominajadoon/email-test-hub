@@ -188,7 +188,7 @@ const TestDetails = () => {
                     key={response.id || index} 
                     response={response} 
                     className="animate-fade-in"
-                    style={{ animationDelay: `${index * 0.1}s` }}
+                    // Remove the style prop that caused the TypeScript error
                   />
                 ))}
               </div>
