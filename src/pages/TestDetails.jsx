@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import Navbar from '@/components/Navbar';
 import ResponseCard from '@/components/ResponseCard';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import SendEmailForm from '@/components/SendEmailForm';
 import { cn } from '@/lib/utils';
 
 const getStatusConfig = (status) => {
@@ -167,7 +168,14 @@ const TestDetails = () => {
             </div>
           </div>
           
-          <div className="space-y-4">
+          {/* Add the SendEmailForm component */}
+          <SendEmailForm 
+            testId={id} 
+            token={token}
+            onSent={handleRefresh}
+          />
+          
+          <div className="space-y-4 mt-8">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-bold">Email Responses</h2>
               <span className="text-sm text-muted-foreground">

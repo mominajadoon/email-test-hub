@@ -56,7 +56,7 @@ export const testsApi = {
   getById: (id, token) => apiRequest(`/tests/${id}`, { token }),
   create: (data, token) => apiRequest('/tests', { method: 'POST', body: data, token }),
   sendEmail: (testId, data, token) => 
-    apiRequest(`/tests/${testId}/send`, { method: 'POST', body: data, token })
+    apiRequest(`/tests/${testId}/send-email`, { method: 'POST', body: data, token })
 };
 
 // API Function for Email Accounts

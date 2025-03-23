@@ -4,6 +4,7 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 const app = express();
@@ -73,6 +74,20 @@ const authenticateToken = (req, res, next) => {
     if (err) return res.status(403).json({ message: 'Invalid token' });
     req.user = user;
     next();
+  });
+};
+
+// Setup Email Bison (using nodemailer as a temporary replacement)
+const setupEmailTransport = () => {
+  // In a real app, you would use the Email Bison API directly
+  // For now, using nodemailer as a placeholder
+  return nodemailer.createTransport({
+    host: 'smtp.mailtrap.io', // Replace with actual SMTP server in production
+    port: 2525,
+    auth: {
+      user: process.env.EMAIL_BISON_USER || 'your_mailtrap_user',
+      pass: process.env.EMAIL_BISON_PASS || 'your_mailtrap_password'
+    }
   });
 };
 
@@ -202,6 +217,43 @@ app.post('/api/tests', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Error creating test:', error);
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// New Email Bison API to send emails
+app.post('/api/tests/:id/send-email', authenticateToken, async (req, res) => {
+  try {
+    const { recipient, subject, content } = req.body;
+    const testId = req.params.id;
+    
+    const test = await Test.findOne({ _id: testId, user: req.user.id });
+    
+    if (!test) {
+      return res.status(404).json({ message: 'Test not found' });
+    }
+    
+    // Set up email transport (using nodemailer as a placeholder for Email Bison)
+    const transporter = setupEmailTransport();
+    
+    // Send email using the transport
+    await transporter.sendMail({
+      from: test.emailAccount.address,
+      to: recipient || test.emailAccount.address, // If no recipient provided, send to test email for testing
+      subject: subject || `Placement Test: ${test.name}`,
+      text: content || test.content,
+      html: `<div>${content || test.content}</div>`
+    });
+    
+    // Update test status if it was pending
+    if (test.status === 'pending') {
+      test.status = 'in_progress';
+      await test.save();
+    }
+    
+    res.json({ message: 'Email sent successfully' });
+  } catch (error) {
+    console.error('Error sending email:', error);
+    res.status(500).json({ message: 'Error sending email: ' + error.message });
   }
 });
 
