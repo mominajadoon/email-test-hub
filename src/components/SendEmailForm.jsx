@@ -4,7 +4,7 @@ import { Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { testsApi } from '@/utils/api';
 
-const SendEmailForm = ({ testId, token, onSent }) => {
+const SendEmailForm = ({ testId, token, onSent, senderEmailId, defaultEmail }) => {
   const [recipient, setRecipient] = useState('');
   const [subject, setSubject] = useState('');
   const [content, setContent] = useState('');
@@ -21,9 +21,10 @@ const SendEmailForm = ({ testId, token, onSent }) => {
     setIsSending(true);
     try {
       await testsApi.sendEmail(testId, {
-        recipient,
+        recipient: recipient || defaultEmail,
         subject,
-        content
+        content,
+        sender_email_id: senderEmailId // Added for EmailBison API
       }, token);
       
       toast.success('Email sent successfully');

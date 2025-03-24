@@ -69,3 +69,8 @@ export const authApi = {
   login: (data) => apiRequest('/login', { method: 'POST', body: data }),
   register: (data) => apiRequest('/register', { method: 'POST', body: data })
 };
+
+// New Email API Functions
+export const emailApi = {
+  send: (data, token) => apiRequest('/email/send-email', { method: 'POST', body: data, token })
+};

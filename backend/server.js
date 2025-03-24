@@ -4,11 +4,13 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Import Routes
+const emailRoutes = require('./routes/emailRoutes');
 
 // Middleware
 app.use(cors());
@@ -77,19 +79,8 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// Setup Email Bison (using nodemailer as a temporary replacement)
-const setupEmailTransport = () => {
-  // In a real app, you would use the Email Bison API directly
-  // For now, using nodemailer as a placeholder
-  return nodemailer.createTransport({
-    host: 'smtp.mailtrap.io', // Replace with actual SMTP server in production
-    port: 2525,
-    auth: {
-      user: process.env.EMAIL_BISON_USER || 'your_mailtrap_user',
-      pass: process.env.EMAIL_BISON_PASS || 'your_mailtrap_password'
-    }
-  });
-};
+// Routes
+app.use('/api/email', emailRoutes);
 
 // Auth Routes
 app.post('/api/register', async (req, res) => {
@@ -220,7 +211,7 @@ app.post('/api/tests', authenticateToken, async (req, res) => {
   }
 });
 
-// New Email Bison API to send emails
+// New Email Bison API to send emails - REPLACED with a route to our new controller
 app.post('/api/tests/:id/send-email', authenticateToken, async (req, res) => {
   try {
     const { recipient, subject, content } = req.body;
@@ -232,25 +223,38 @@ app.post('/api/tests/:id/send-email', authenticateToken, async (req, res) => {
       return res.status(404).json({ message: 'Test not found' });
     }
     
-    // Set up email transport (using nodemailer as a placeholder for Email Bison)
-    const transporter = setupEmailTransport();
-    
-    // Send email using the transport
-    await transporter.sendMail({
-      from: test.emailAccount.address,
-      to: recipient || test.emailAccount.address, // If no recipient provided, send to test email for testing
+    // Call our EmailBison API route
+    const emailData = {
       subject: subject || `Placement Test: ${test.name}`,
-      text: content || test.content,
-      html: `<div>${content || test.content}</div>`
-    });
+      message: content || test.content,
+      sender_email_id: test.emailAccount.uuid,
+      to_emails: [recipient || test.emailAccount.address]
+    };
     
-    // Update test status if it was pending
-    if (test.status === 'pending') {
-      test.status = 'in_progress';
-      await test.save();
+    try {
+      // Use axios to make a request to our own email API
+      const axios = require('axios');
+      const response = await axios.post(
+        `http://localhost:${PORT}/api/email/send-email`,
+        emailData,
+        {
+          headers: {
+            'Authorization': `Bearer ${req.headers.authorization.split(' ')[1]}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      // Update test status if it was pending
+      if (test.status === 'pending') {
+        test.status = 'in_progress';
+        await test.save();
+      }
+      
+      res.json({ message: 'Email sent successfully', data: response.data });
+    } catch (error) {
+      throw new Error(`Error sending email via EmailBison: ${error.message}`);
     }
-    
-    res.json({ message: 'Email sent successfully' });
   } catch (error) {
     console.error('Error sending email:', error);
     res.status(500).json({ message: 'Error sending email: ' + error.message });
