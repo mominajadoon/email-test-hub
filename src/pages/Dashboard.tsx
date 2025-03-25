@@ -20,6 +20,8 @@ const Dashboard = () => {
     setIsLoading(true);
     try {
       const data = await testsApi.getAll(token);
+      console.log('Fetched tests:', data);
+      
       setTests(data);
     } catch (error) {
       console.error('Error fetching tests:', error);

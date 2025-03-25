@@ -1,14 +1,13 @@
-
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
-import { authApi } from '@/utils/api';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { authApi } from "@/utils/api";
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [token, setToken] = useState(localStorage.getItem("token") || null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -20,20 +19,20 @@ export const AuthProvider = ({ children }) => {
       }
 
       try {
-        // For now, we'll just assume the token is valid
-        // In a real app, we would have a /verify endpoint to check the token
-        const userData = JSON.parse(localStorage.getItem('user'));
-        if (userData) {
-          setUser(userData);
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+        } else {
+          localStorage.removeItem("token");
+          setToken(null);
         }
-        setIsLoading(false);
       } catch (error) {
-        console.error('Token verification failed:', error);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        console.error("Error parsing user data:", error);
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
         setToken(null);
-        setIsLoading(false);
       }
+      setIsLoading(false);
     };
 
     verifyToken();
@@ -42,18 +41,30 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     setIsLoading(true);
     try {
+      console.log("Attempting login..."); // Debugging log
       const response = await authApi.login({ email, password });
-      
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
+
+      console.log("Login response:", response); // Log API response
+
+      if (!response || !response.token) {
+        // Remove response.user check
+        throw new Error("Invalid login response");
+      }
+
+      localStorage.setItem("token", response.token);
       setToken(response.token);
-      setUser(response.user);
-      toast.success('Login successful!');
-      navigate('/dashboard');
+
+      // Remove user-related storage if API doesn't provide it
+      if (response.user) {
+        localStorage.setItem("user", JSON.stringify(response.user));
+        setUser(response.user);
+      }
+
+      toast.success("Login successful!");
+      navigate("/dashboard");
     } catch (error) {
-      console.error('Login failed:', error);
-      toast.error('Login failed. Please check your credentials.');
-      throw error;
+      console.error("Login failed:", error);
+      toast.error(error.message || "Login failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -63,25 +74,23 @@ export const AuthProvider = ({ children }) => {
     setIsLoading(true);
     try {
       await authApi.register({ name, email, password });
-      
-      toast.success('Registration successful! Please log in.');
-      navigate('/login');
+      toast.success("Registration successful! Please log in.");
+      navigate("/login");
     } catch (error) {
-      console.error('Registration failed:', error);
-      toast.error('Registration failed. Please try again.');
-      throw error;
+      console.error("Registration failed:", error);
+      toast.error("Registration failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setToken(null);
     setUser(null);
-    toast.info('You have been logged out.');
-    navigate('/login');
+    toast.info("You have been logged out.");
+    navigate("/login");
   };
 
   return (
@@ -93,7 +102,7 @@ export const AuthProvider = ({ children }) => {
         isLoading,
         login,
         register,
-        logout
+        logout,
       }}
     >
       {children}
@@ -104,7 +113,7 @@ export const AuthProvider = ({ children }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
