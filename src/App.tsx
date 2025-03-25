@@ -12,6 +12,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import CreateTest from "./pages/CreateTest";
 import TestDetails from "./pages/TestDetails";
+import TestResult from "./pages/TestResult";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/create-test" element={<CreateTest />} />
             <Route path="/tests/:id" element={<TestDetails />} />
+            <Route path="/tests/:id/results" element={<TestResult />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

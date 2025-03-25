@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Mail, Calendar, RefreshCw } from 'lucide-react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { ChevronLeft, Mail, Calendar, RefreshCw, Trophy } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { testsApi } from '@/utils/api';
@@ -146,14 +145,24 @@ const TestDetails = () => {
               </div>
             </div>
             
-            <button
-              onClick={handleRefresh}
-              className="flex items-center px-3 py-1.5 text-sm border border-input rounded-md hover:bg-muted transition-colors"
-              disabled={isRefreshing}
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-              Refresh
-            </button>
+            <div className="flex gap-3">
+              <Link
+                to={`/tests/${id}/results`}
+                className="flex items-center px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+              >
+                <Trophy className="h-4 w-4 mr-2" />
+                View Results
+              </Link>
+              
+              <button
+                onClick={handleRefresh}
+                className="flex items-center px-3 py-1.5 text-sm border border-input rounded-md hover:bg-muted transition-colors"
+                disabled={isRefreshing}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
+            </div>
           </div>
           
           <div className="bg-muted/30 rounded-lg p-4 mb-8">
@@ -168,7 +177,6 @@ const TestDetails = () => {
             </div>
           </div>
           
-          {/* Add the SendEmailForm component */}
           <SendEmailForm 
             testId={id} 
             token={token}
